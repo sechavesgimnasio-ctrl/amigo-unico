@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Panel de administrador - Amigo Único</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito+Sans:wght@400;600;800&display=swap">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body class="admin-body">
+    <main class="admin">
+        <!-- Inicio de sesión -->
+        <div id="login-caja">
+            <h1>Panel de administrador</h1>
+            <p class="subtitulo">Solo para el equipo de Amigo Único.</p>
+            <form id="form-login">
+                <div class="form-group"><label for="usuario">Usuario</label><input id="usuario" required autocomplete="username"></div>
+                <div class="form-group"><label for="clave">Clave</label><input id="clave" type="password" required autocomplete="current-password"></div>
+                <div id="login-aviso" class="aviso error" hidden></div>
+                <button class="btn-principal" type="submit" id="login-boton">Entrar</button>
+            </form>
+        </div>
+
+        <!-- Panel (solo se ve con sesión iniciada) -->
+        <div id="panel" hidden>
+            <div class="admin-barra">
+                <h1>Panel de administrador</h1>
+                <div><a class="mini" href="index.html" style="text-decoration:none;display:inline-block">Ver tienda</a> <button class="mini peligro" id="salir">Cerrar sesión</button></div>
+            </div>
+            <div class="pestanas" role="tablist">
+                <button role="tab" id="tab-productos" aria-selected="true">Productos</button>
+                <button role="tab" id="tab-mensajes" aria-selected="false">Mensajes <span id="no-leidos"></span></button>
+            </div>
+            <div id="aviso" class="aviso" hidden></div>
+
+            <section id="vista-productos" style="padding:0">
+                <form id="form-producto">
+                    <h2 id="titulo-form">Agregar producto</h2>
+                    <input type="hidden" id="p-id">
+                    <div class="grid-2">
+                        <div class="form-group"><label for="p-nombre">Nombre</label><input id="p-nombre" required maxlength="100"></div>
+                        <div class="form-group"><label for="p-precio">Precio en pesos (opcional)</label><input id="p-precio" type="number" min="0" step="1" inputmode="numeric"></div>
+                    </div>
+                    <div class="form-group"><label for="p-desc">Descripción</label><textarea id="p-desc" rows="2" maxlength="500"></textarea></div>
+                    <div class="grid-2">
+                        <div class="form-group"><label for="p-icono">Ícono</label>
+                            <select id="p-icono" class="talla">
+                                <option value="fa-paw">Huella</option><option value="fa-vest">Chaleco</option><option value="fa-shirt">Camiseta</option>
+                                <option value="fa-moon">Luna (pijama)</option><option value="fa-plane">Avión</option><option value="fa-user-tie">Corbata</option>
+                                <option value="fa-hat-cowboy">Sombrero</option><option value="fa-bone">Hueso</option><option value="fa-socks">Medias</option>
+                            </select></div>
+                        <div class="form-group"><label for="p-activo">Visibilidad</label><label style="font-weight:400"><input type="checkbox" id="p-activo" checked> Visible en la tienda</label></div>
+                    </div>
+                    <div class="acciones-fila">
+                        <button class="btn-principal" type="submit" id="guardar-producto">Guardar producto</button>
+                        <button class="mini" type="button" id="cancelar-edicion" hidden>Cancelar edición</button>
+                    </div>
+                </form>
+                <div id="lista-productos"></div>
+            </section>
+
+            <section id="vista-mensajes" style="padding:0" hidden>
+                <div id="lista-mensajes"></div>
+            </section>
+        </div>
+    </main>
+    <script src="config.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
