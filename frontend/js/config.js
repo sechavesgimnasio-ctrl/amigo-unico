@@ -1,5 +1,5 @@
 // Dirección del backend. Cuando publiques la API en Render, cambia SOLO esta línea.
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://amigo-unico-api.onrender.com';
 
 // Función única para hablar con la API: maneja errores y devuelve mensajes claros.
 async function api(ruta, { metodo = 'GET', cuerpo, token } = {}) {
