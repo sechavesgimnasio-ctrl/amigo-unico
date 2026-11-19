@@ -31,6 +31,7 @@
             <div class="pestanas" role="tablist">
                 <button role="tab" id="tab-productos" aria-selected="true">Productos</button>
                 <button role="tab" id="tab-mensajes" aria-selected="false">Mensajes <span id="no-leidos"></span></button>
+                <button role="tab" id="tab-pedidos" aria-selected="false">Pedidos <span id="pedidos-nuevos"></span></button>
             </div>
             <div id="aviso" class="aviso" hidden></div>
 
@@ -40,9 +41,29 @@
                     <input type="hidden" id="p-id">
                     <div class="grid-2">
                         <div class="form-group"><label for="p-nombre">Nombre</label><input id="p-nombre" required maxlength="100"></div>
-                        <div class="form-group"><label for="p-precio">Precio en pesos (opcional)</label><input id="p-precio" type="number" min="0" step="1" inputmode="numeric"></div>
+                        <div class="form-group"><label for="p-precio">Precio base en pesos (opcional)</label><input id="p-precio" type="number" min="0" step="1" inputmode="numeric"></div>
                     </div>
+                    <fieldset class="precios-talla">
+                        <legend>Precio por talla (opcional)</legend>
+                        <p class="ayuda">Déjalo vacío para que esa talla use el precio base.</p>
+                        <div class="grid-4">
+                            <div class="form-group"><label for="p-ps">S</label><input id="p-ps" type="number" min="0" step="1" inputmode="numeric"></div>
+                            <div class="form-group"><label for="p-pm">M</label><input id="p-pm" type="number" min="0" step="1" inputmode="numeric"></div>
+                            <div class="form-group"><label for="p-pl">L</label><input id="p-pl" type="number" min="0" step="1" inputmode="numeric"></div>
+                            <div class="form-group"><label for="p-pxl">XL</label><input id="p-pxl" type="number" min="0" step="1" inputmode="numeric"></div>
+                        </div>
+                    </fieldset>
                     <div class="form-group"><label for="p-desc">Descripción</label><textarea id="p-desc" rows="2" maxlength="500"></textarea></div>
+                    <div class="form-group">
+                        <label for="p-foto">Foto del producto (opcional)</label>
+                        <div class="foto-campo">
+                            <img id="foto-vista" class="foto-vista" alt="Vista previa de la foto">
+                            <input id="p-foto" type="file" accept="image/*">
+                            <button class="mini" type="button" id="quitar-foto" hidden>Quitar foto</button>
+                        </div>
+                        <small>La foto se reduce sola para que pese poco. Si no subes una, se usa el ícono.</small>
+                        <input type="hidden" id="p-imagen">
+                    </div>
                     <div class="grid-2">
                         <div class="form-group"><label for="p-icono">Ícono</label>
                             <select id="p-icono" class="talla">
@@ -62,6 +83,11 @@
 
             <section id="vista-mensajes" style="padding:0" hidden>
                 <div id="lista-mensajes"></div>
+            </section>
+
+            <section id="vista-pedidos" style="padding:0" hidden>
+                <p class="subtitulo">Aquí aparecen los pedidos que los clientes envían por WhatsApp. Esta página se actualiza sola cada 30 segundos.</p>
+                <div id="lista-pedidos"></div>
             </section>
         </div>
     </main>

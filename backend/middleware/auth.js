@@ -16,6 +16,13 @@ export function soloAdmin(req, res, next) {
   next();
 }
 
+// Deja pasar a todos, pero si traen un token de cliente válido lo reconoce (para guardar su nombre en el pedido)
+export function usuarioOpcional(req, res, next) {
+  const token = leerToken(req);
+  if (token && token.rol === 'cliente') req.usuario = token;
+  next();
+}
+
 // Solo clientes con sesión iniciada
 export function soloUsuario(req, res, next) {
   const token = leerToken(req);

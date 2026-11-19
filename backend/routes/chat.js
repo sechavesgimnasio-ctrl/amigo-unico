@@ -30,7 +30,14 @@ const MENU = 'Puedo ayudarte con la talla de tu mascota, qué prenda elegir, pre
 // Pasa a minúsculas y quita tildes para comparar sin problemas ("Bogotá" = "bogota")
 const limpiar = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const contiene = (texto, claves) => claves.some((c) => texto.includes(c));
-const precioTexto = (p) => (p.precio ? '$' + Number(p.precio).toLocaleString('es-CO') : 'precio por consultar');
+const dinero = (n) => '$' + Number(n).toLocaleString('es-CO');
+// Junta el precio base y el de cada talla; si varían, dice "desde $X, según la talla"
+function precioTexto(p) {
+  const valores = [p.precio, ...['S', 'M', 'L', 'XL'].map((t) => p.precios && p.precios[t])].filter(Boolean);
+  if (!valores.length) return 'precio por consultar';
+  const min = Math.min(...valores);
+  return min === Math.max(...valores) ? dinero(min) : `desde ${dinero(min)}, según la talla`;
+}
 
 export function responderConReglas(pregunta, productos) {
   const t = limpiar(pregunta);
@@ -107,7 +114,7 @@ export function responderConReglas(pregunta, productos) {
 // ===== MODO IA =====
 function instrucciones(productos) {
   const catalogo = productos
-    .map((p) => `- ${p.nombre}: ${p.descripcion} (${p.precio ? '$' + p.precio.toLocaleString('es-CO') : 'precio: consultar por WhatsApp'})`).join('\n');
+    .map((p) => `- ${p.nombre}: ${p.descripcion} (${precioTexto(p)})`).join('\n');
   return `Eres el asesor virtual de Amigo Único, una tienda colombiana de ropa y estilo para mascotas.
 Tono: cercano, cálido y juguetón, en español de Colombia, con respuestas cortas (máximo 4 frases). Puedes usar algún emoji de huellas o mascotas, sin exagerar.
 Tallas: S (pecho 30-40 cm), M (41-50), L (51-65), XL (66-85). Si te dan la medida del pecho, recomienda la talla.

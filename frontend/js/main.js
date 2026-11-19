@@ -33,15 +33,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const grid = $('#grid-productos');
     const formatoPrecio = (p) => (p ? '$' + Number(p).toLocaleString('es-CO') : 'Consultar precio');
 
+    // Precio de una talla: el específico si existe, si no el precio base
+    const TALLAS_VENTA = ['S', 'M', 'L', 'XL'];
+    const precioDe = (p, talla) => (p.precios && p.precios[talla]) || p.precio || null;
+
     function tarjeta(p) {
         // Solo aceptamos íconos con formato fa-algo; si no, usamos la huella
         const icono = /^fa-[a-z-]+$/.test(p.icono) ? p.icono : 'fa-paw';
-        return `<article class="card-producto" data-nombre="${esc(p.nombre)}">
-            <div class="imagen-producto"><i class="fas ${icono}"></i></div>
+        // Si el producto tiene foto la mostramos; si no, usamos el ícono
+        const imagen = /^data:image\/(jpeg|png|webp);base64,/.test(p.imagen || '')
+            ? `<img src="${p.imagen}" alt="${esc(p.nombre)}" loading="lazy">`
+            : `<i class="fas ${icono}"></i>`;
+        const preciosPorTalla = Object.fromEntries(TALLAS_VENTA.map((t) => [t, precioDe(p, t)]));
+        const variaPrecio = new Set(Object.values(preciosPorTalla)).size > 1;
+        return `<article class="card-producto" data-nombre="${esc(p.nombre)}" data-precios="${esc(JSON.stringify(preciosPorTalla))}">
+            <div class="imagen-producto">${imagen}</div>
             <div class="card-body">
                 <h3>${esc(p.nombre)}</h3>
                 <p>${esc(p.descripcion)}</p>
-                <span class="precio">${formatoPrecio(p.precio)}</span>
+                <span class="precio">${formatoPrecio(preciosPorTalla.S)}</span>${variaPrecio ? '<small class="nota-precio">El precio cambia según la talla</small>' : ''}
                 <div class="acciones">
                     <label class="sr-only" for="t-${esc(p._id)}">Talla</label>
                     <select id="t-${esc(p._id)}" class="talla"><option>S</option><option>M</option><option>L</option><option>XL</option></select>
@@ -92,6 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
     botonAbrir.addEventListener('click', () => abrirPanel(panel.hidden));
     $('#cerrar-pedido').addEventListener('click', () => abrirPanel(false));
 
+    const dinero = (n) => '$' + Number(n).toLocaleString('es-CO');
+
     function pintarPedido() {
         contador.textContent = pedido.reduce((suma, item) => suma + item.cantidad, 0);
         if (pedido.length === 0) {
@@ -100,13 +112,34 @@ document.addEventListener('DOMContentLoaded', () => {
             botonEnviar.href = '#';
             return;
         }
+        const total = pedido.reduce((suma, i) => suma + (i.precio || 0) * i.cantidad, 0);
+        const faltaPrecio = pedido.some((i) => !i.precio);
+        const textoTotal = total ? dinero(total) + (faltaPrecio ? ' + prendas por confirmar' : '') : 'Por confirmar';
+
         lista.innerHTML = pedido.map((item, i) =>
-            `<li><span>${item.cantidad} × ${esc(item.nombre)} (talla ${item.talla})</span><button data-quitar="${i}" aria-label="Quitar ${esc(item.nombre)}">&times;</button></li>`).join('');
+            `<li><span>${item.cantidad} × ${esc(item.nombre)} (talla ${item.talla})${item.precio ? ' · ' + dinero(item.precio * item.cantidad) : ''}</span><button data-quitar="${i}" aria-label="Quitar ${esc(item.nombre)}">&times;</button></li>`).join('')
+            + `<li class="total-linea"><strong>Total</strong><strong>${textoTotal}</strong></li>`;
+
         const saludo = sesion ? `Hola Amigo Único, soy ${sesion.usuario.nombre} y quiero pedir:\n` : 'Hola Amigo Único, quiero pedir:\n';
-        const mensaje = saludo + pedido.map((i) => `- ${i.cantidad} × ${i.nombre} (talla ${i.talla})`).join('\n');
-        botonEnviar.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
+        const detalle = pedido.map((i) => `- ${i.cantidad} × ${i.nombre} (talla ${i.talla})${i.precio ? ' · ' + dinero(i.precio * i.cantidad) : ''}`).join('\n');
+        botonEnviar.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`${saludo}${detalle}\nTotal: ${textoTotal}`)}`;
         botonEnviar.classList.remove('desactivado');
     }
+
+    // Al pulsar "Pedir por WhatsApp" también registramos el pedido en el servidor,
+    // para que aparezca en el panel del administrador. El enlace a WhatsApp sigue su curso normal.
+    let pedidoRegistrado = '';
+    botonEnviar.addEventListener('click', () => {
+        if (!pedido.length) return;
+        const firma = JSON.stringify(pedido.map((i) => [i.nombre, i.talla, i.cantidad]));
+        if (firma === pedidoRegistrado) return; // evita duplicados si pulsa dos veces
+        pedidoRegistrado = firma;
+        api('/api/pedidos', {
+            metodo: 'POST',
+            cuerpo: { items: pedido.map(({ nombre, talla, cantidad }) => ({ nombre, talla, cantidad })) },
+            token: sesion ? sesion.token : undefined
+        }).catch(() => { pedidoRegistrado = ''; }); // si falla, el cliente igual llega a WhatsApp
+    });
 
     lista.addEventListener('click', (e) => {
         const boton = e.target.closest('[data-quitar]');
@@ -123,9 +156,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const nombre = tarjetaEl.dataset.nombre;
         const talla = tarjetaEl.querySelector('.talla').value;
         const existente = pedido.find((p) => p.nombre === nombre && p.talla === talla);
-        if (existente) existente.cantidad++; else pedido.push({ nombre, talla, cantidad: 1 });
+        if (existente) existente.cantidad++; else pedido.push({ nombre, talla, cantidad: 1, precio: JSON.parse(tarjetaEl.dataset.precios)[talla] || null });
         pintarPedido();
         mostrarToast(`Agregado: ${nombre}, talla ${talla}`);
+    });
+
+    // Al cambiar la talla en una tarjeta, se actualiza el precio que se muestra
+    grid.addEventListener('change', (e) => {
+        const selector = e.target.closest('.talla');
+        if (!selector) return;
+        const tarjetaEl = selector.closest('.card-producto');
+        tarjetaEl.querySelector('.precio').textContent = formatoPrecio(JSON.parse(tarjetaEl.dataset.precios)[selector.value]);
     });
 
     // ---------- Formulario de contacto (se guarda en la base de datos) ----------
